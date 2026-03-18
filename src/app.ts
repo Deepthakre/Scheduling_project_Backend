@@ -6,7 +6,8 @@ import passport from "./config/passport";
 import { ENV } from "./config/env";
 import authRoutes from "./routes/auth.routes";
 import adminRoutes from "./routes/admin.routes";
-
+import meetingRoutes from "./routes/meeting.routes";
+import bookingRoutes from "./routes/booking.routes";
 const app = express();
 
 // ── Rate Limiting ──────────────────────────────────────────
@@ -68,7 +69,8 @@ app.use("/auth/register", registerLimiter);
 app.use("/auth/forgot-password", forgotPasswordLimiter);
 app.use("/auth", authRoutes);
 app.use("/admin", adminRoutes);
-
+app.use("/meetings", meetingRoutes);
+app.use("/bookings", bookingRoutes);
 // Health check
 app.get("/health", (_req, res) => {
   res.json({ success: true, message: "Server is running!", env: ENV.NODE_ENV });

@@ -62,3 +62,31 @@ export const sendPasswordResetEmail = async (
     `,
   });
 };
+
+export const sendBookingConfirmationEmail = async (
+  guestEmail: string,
+  guestName: string,
+  meetingTitle: string,
+  date: string,
+  time: string,
+  hostName: string
+): Promise<void> => {
+  await transporter.sendMail({
+    from: `"Scheduly" <${process.env.EMAIL_FROM}>`,
+    to: guestEmail,
+    subject: `Booking Confirmed: ${meetingTitle}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #f9fafb; border-radius: 12px;">
+        <h2 style="color: #1a1a2e;">✅ Booking Confirmed!</h2>
+        <p style="color: #555;">Hi ${guestName}, your meeting has been scheduled.</p>
+        <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 20px 0;">
+          <p><strong>Meeting:</strong> ${meetingTitle}</p>
+          <p><strong>Host:</strong> ${hostName}</p>
+          <p><strong>Date:</strong> ${date}</p>
+          <p><strong>Time:</strong> ${time}</p>
+        </div>
+        <p style="color: #888; font-size: 13px;">Please be on time!</p>
+      </div>
+    `,
+  });
+};
