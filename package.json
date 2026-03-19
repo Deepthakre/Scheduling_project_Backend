@@ -4,10 +4,10 @@
   "description": "Full Auth Backend - Node + Express + TypeScript + MongoDB",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon",
-    "build": "tsc",
-    "start": "node dist/server.js"
-  },
+  "dev": "tsx watch src/server.ts",
+  "build": "tsc",
+  "start": "node dist/server.js"
+},
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
@@ -38,6 +38,7 @@
     "@types/uuid": "^10.0.0",
     "nodemon": "^3.0.2",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }
