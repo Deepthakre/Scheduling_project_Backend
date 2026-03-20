@@ -17,9 +17,9 @@ import { AuthRequest } from "../middlewares/auth.middleware";
 
 // Cookie options — HttpOnly cookie JavaScript access nahi kar sakti
 const cookieOptions = {
-  httpOnly: true,       // JS se access nahi hoga — XSS safe
+  httpOnly: true, // JS se access nahi hoga — XSS safe
   secure: process.env.NODE_ENV === "production", // HTTPS only production mein
-  sameSite: "lax" as const,  // CSRF protection
+  sameSite: "lax" as const, // CSRF protection
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 din
 };
 
@@ -57,7 +57,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       res,
       "Registration successful! Please check your email for the 6-digit verification code.",
       { userId: user._id },
-      201
+      201,
     );
   } catch {
     sendError(res, "Registration failed. Please try again.", 500);
@@ -65,7 +65,10 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 };
 
 // ── VERIFY EMAIL ──────────────────────────────────────────
-export const verifyEmail = async (req: Request, res: Response): Promise<void> => {
+export const verifyEmail = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { email, code } = req.body;
 
@@ -92,7 +95,10 @@ export const verifyEmail = async (req: Request, res: Response): Promise<void> =>
 };
 
 // ── RESEND CODE ───────────────────────────────────────────
-export const resendVerificationCode = async (req: Request, res: Response): Promise<void> => {
+export const resendVerificationCode = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { email } = req.body;
 
@@ -125,14 +131,20 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email }).select("+password +refreshToken");
+    const user = await User.findOne({ email }).select(
+      "+password +refreshToken",
+    );
     if (!user) {
       sendError(res, "Invalid email or password.", 401);
       return;
     }
 
     if (!user.password) {
-      sendError(res, "This account uses Google Sign-In. Please login with Google.", 400);
+      sendError(
+        res,
+        "This account uses Google Sign-In. Please login with Google.",
+        400,
+      );
       return;
     }
 
@@ -174,7 +186,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 };
 
 // ── REFRESH TOKEN ─────────────────────────────────────────
-export const refreshToken = async (req: Request, res: Response): Promise<void> => {
+export const refreshToken = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     // Cookie se token lo — body se nahi
     const token = req.cookies.refreshToken;
@@ -210,12 +225,19 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
       accessToken: newAccessToken,
     });
   } catch {
-    sendError(res, "Invalid or expired refresh token. Please login again.", 401);
+    sendError(
+      res,
+      "Invalid or expired refresh token. Please login again.",
+      401,
+    );
   }
 };
 
 // ── LOGOUT ────────────────────────────────────────────────
-export const logout = async (req: AuthRequest, res: Response): Promise<void> => {
+export const logout = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const userId = req.currentUser?.userId;
     if (userId) {
@@ -224,7 +246,13 @@ export const logout = async (req: AuthRequest, res: Response): Promise<void> => 
     }
 
     // Cookie clear karo
-    res.clearCookie("refreshToken", cookieOptions);
+    // res.clearCookie("refreshToken", cookieOptions);
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax" as const,
+    });
 
     sendSuccess(res, "Logged out successfully.");
   } catch {
@@ -233,18 +261,27 @@ export const logout = async (req: AuthRequest, res: Response): Promise<void> => 
 };
 
 // ── FORGOT PASSWORD ───────────────────────────────────────
-export const forgotPassword = async (req: Request, res: Response): Promise<void> => {
+export const forgotPassword = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
     if (!user) {
-      sendSuccess(res, "If that email is registered, you will receive a reset link.");
+      sendSuccess(
+        res,
+        "If that email is registered, you will receive a reset link.",
+      );
       return;
     }
 
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
 
     user.passwordResetToken = hashedToken;
     user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
@@ -252,14 +289,20 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
 
     await sendPasswordResetEmail(email, user.name, resetToken);
 
-    sendSuccess(res, "If that email is registered, you will receive a reset link.");
+    sendSuccess(
+      res,
+      "If that email is registered, you will receive a reset link.",
+    );
   } catch {
     sendError(res, "Failed to send reset email.", 500);
   }
 };
 
 // ── RESET PASSWORD ────────────────────────────────────────
-export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+export const resetPassword = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const { token, password } = req.body;
 
@@ -282,16 +325,26 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     await user.save();
 
     // Reset ke baad cookie bhi clear karo
-    res.clearCookie("refreshToken", cookieOptions);
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax" as const,
+    });
 
-    sendSuccess(res, "Password reset successful! You can now login with your new password.");
+    sendSuccess(
+      res,
+      "Password reset successful! You can now login with your new password.",
+    );
   } catch {
     sendError(res, "Password reset failed.", 500);
   }
 };
 
 // ── GET PROFILE ───────────────────────────────────────────
-export const getProfile = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getProfile = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
   try {
     const user = await User.findById(req.currentUser?.userId);
     if (!user) {
@@ -315,7 +368,10 @@ export const getProfile = async (req: AuthRequest, res: Response): Promise<void>
 };
 
 // ── GOOGLE OAUTH CALLBACK ─────────────────────────────────
-export const googleCallback = async (req: Request, res: Response): Promise<void> => {
+export const googleCallback = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
   try {
     const user = req.user as unknown as IUser;
 
@@ -338,7 +394,7 @@ export const googleCallback = async (req: Request, res: Response): Promise<void>
 
     // Access token URL mein bhejo — frontend pakad lega
     res.redirect(
-      `${process.env.CLIENT_URL}/oauth-success?accessToken=${accessToken}`
+      `${process.env.CLIENT_URL}/oauth-success?accessToken=${accessToken}`,
     );
   } catch {
     res.redirect(`${process.env.CLIENT_URL}/login?error=server_error`);
