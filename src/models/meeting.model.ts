@@ -1,4 +1,4 @@
-// backend/src/models/meeting.model.ts
+// meeting.model.ts
 
 import mongoose, { Document, Schema } from "mongoose";
 
@@ -8,9 +8,20 @@ export interface IAvailability {
   endTime: string;
 }
 
+// Answer type ke options
+export type QuestionType =
+  | "one_line"
+  | "multiple_lines"
+  | "radio"
+  | "checkbox"
+  | "dropdown"
+  | "phone";
+
 export interface ICustomQuestion {
   question: string;
   required: boolean;
+  type: QuestionType; // ← naya
+  options: string[]; // ← naya (radio/checkbox/dropdown ke liye)
 }
 
 export interface IMeeting extends Document {
@@ -23,6 +34,7 @@ export interface IMeeting extends Document {
   location?: string;
   availability: IAvailability[];
   customQuestions: ICustomQuestion[];
+  timezone: string;
   slug: string;
   isActive: boolean;
   createdAt: Date;
@@ -67,12 +79,33 @@ const meetingSchema = new Schema<IMeeting>(
         endTime: { type: String, required: true },
       },
     ],
+
     customQuestions: [
       {
         question: { type: String, required: true },
         required: { type: Boolean, default: false },
+        type: {
+          type: String,
+          enum: [
+            "one_line",
+            "multiple_lines",
+            "radio",
+            "checkbox",
+            "dropdown",
+            "phone",
+          ],
+          default: "one_line", // ← default one line
+        },
+        options: {
+          type: [String],
+          default: [], // ← radio/checkbox/dropdown ke liye
+        },
       },
     ],
+    timezone: {
+      type: String,
+      default: "Asia/Kolkata",
+    },
     slug: {
       type: String,
       unique: true,
@@ -83,7 +116,7 @@ const meetingSchema = new Schema<IMeeting>(
       default: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export const Meeting = mongoose.model<IMeeting>("Meeting", meetingSchema);
