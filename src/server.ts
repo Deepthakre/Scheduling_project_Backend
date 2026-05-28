@@ -1,11 +1,22 @@
 import app from "./app";
 import { connectDB } from "./config/db";
+import redis from "./config/redis";
 import { ENV } from "./config/env";
 import dns from "dns";
 dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
 const startServer = async () => {
-  await connectDB();
+  try {
+    // 🔹 1. DB connect
+    await connectDB();
+
+    // 🔹 2. Redis connect (optional but recommended)
+    try {
+      await redis.connect();
+    } catch (err) {
+      console.error(" Redis connection failed — app will run without cache");
+    }
+
 
   app.listen(ENV.PORT, () => {
     console.log(` Server running on http://localhost:${ENV.PORT}`);
@@ -25,6 +36,10 @@ const startServer = async () => {
     console.log(`   GET    /admin/users`);
     console.log(`   GET    /health`);
   });
+   } catch (error) {
+    console.error("❌ Failed to start server:", error);
+    process.exit(1); // app band ho jayega agar DB fail hua
+  }
 };
 
 startServer();

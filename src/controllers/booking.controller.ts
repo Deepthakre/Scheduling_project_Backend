@@ -7,9 +7,14 @@ import { User } from "../models/user.model";
 import { sendSuccess, sendError } from "../utils/response.utils";
 import { AuthRequest } from "../middlewares/auth.middleware";
 import { sendBookingConfirmationEmail } from "../services/email.service";
+import { CACHE_KEYS, deleteCache } from "../utils/cache";
 
 // ─── PUBLIC: CREATE BOOKING ───────────────────────────────
-export const createBooking = async (req: Request, res: Response): Promise<void> => {
+
+export const createBooking = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const {
       meetingSlug,
@@ -25,14 +30,17 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Meeting dhundo
-    const meeting = await Meeting.findOne({ slug: meetingSlug, isActive: true });
+    const meeting = await Meeting.findOne({
+      slug: meetingSlug,
+      isActive: true,
+    });
+
     if (!meeting) {
       sendError(res, "Meeting not found.", 404);
       return;
     }
 
-    // Check karo slot already booked toh nahi
+    // Slot already booked check
     const existing = await Booking.findOne({
       meetingId: meeting._id,
       selectedDate,
@@ -41,11 +49,10 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
     });
 
     if (existing) {
-      sendError(res, "This time slot is already booked. Please choose another.", 409);
+      sendError(res, "This slot is already booked.", 409);
       return;
     }
 
-    // Booking banao
     const booking = await Booking.create({
       meetingId: meeting._id,
       guestName,
@@ -55,7 +62,13 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
       customAnswers: customAnswers || [],
     });
 
-    // Confirmation email bhejo
+    // ✅ Is date ke slots cache clear karo
+    // Kyun? Ek slot ab book ho gaya
+    // Purana cache invalid ho gaya
+    await deleteCache(CACHE_KEYS.slots(meetingSlug, selectedDate));
+    console.log(`🗑 Slots cache cleared: ${meetingSlug} - ${selectedDate}`);
+
+    // Email bhejo
     try {
       const host = await User.findById(meeting.userId);
       await sendBookingConfirmationEmail(
@@ -67,11 +80,10 @@ export const createBooking = async (req: Request, res: Response): Promise<void> 
         host?.name || "Host"
       );
     } catch {
-      // Email fail hone par booking cancel mat karo
-      console.error("Confirmation email failed — non critical");
+      console.error("Email failed — non critical");
     }
 
-    sendSuccess(res, "Booking confirmed successfully!", { booking }, 201);
+    sendSuccess(res, "Booking confirmed!", { booking }, 201);
   } catch {
     sendError(res, "Failed to create booking.", 500);
   }

@@ -22,4 +22,6 @@ export const ENV = {
   EMAIL_USER: process.env.EMAIL_USER || "",
   EMAIL_PASS: process.env.EMAIL_PASS || "",
   EMAIL_FROM: process.env.EMAIL_FROM || "Auth App <noreply@app.com>",
+
+  REDIS_URL:process.env.REDIS_URL
 };
